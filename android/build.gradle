@@ -1,0 +1,39 @@
+buildscript {
+    repositories {
+        google()
+        jcenter()
+    }
+    ext.kotlin_version = '1.9.22' //1.9.22 2.1.20
+
+    dependencies {
+
+
+        classpath 'com.android.tools.build:gradle:8.4.1' //8.4.1 7.3.0
+        classpath 'com.google.gms:google-services:4.4.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+//    configurations.all {
+//        resolutionStrategy {
+//            force 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20'  // Force Kotlin 1.9.22 for all dependencies
+//        }
+//    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
