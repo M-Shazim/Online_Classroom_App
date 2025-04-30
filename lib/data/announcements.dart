@@ -32,26 +32,35 @@ Future<bool> getAnnouncementList() async {
   if (jsonList == null) return false;
 
   jsonList.forEach((element) {
-    
     var data = element.data();
+
+    // Safely get the Account and Classroom, using a default value or error handling if null
+    var account = getAccount(data["uid"]);
+    var classroom = getClassroom(data["className"]);
+
+    if (account == null || classroom == null) {
+      print("Error: Account or Classroom is null for announcement: ${data["title"]}");
+      return; // Skip this iteration if either is null
+    }
+
     announcementList.insert(0,
-      Announcement(
-        title: data["title"],
-        dateTime: data["dateTime"],
-        type: data["type"],
-        description: data["description"],
-        dueDate: data["dueDate"],
-        attachments: getAttachmentListForAnnouncement(data["title"]),
-        user: getAccount(data["uid"])!,
-        classroom: getClassroom(data["className"])!,
-      )
+        Announcement(
+          title: data["title"],
+          dateTime: data["dateTime"],
+          type: data["type"],
+          description: data["description"],
+          dueDate: data["dueDate"],
+          attachments: getAttachmentListForAnnouncement(data["title"]),
+          user: account,
+          classroom: classroom,
+        )
     );
   });
 
   print("\t\t\t\tGot Announcements list");
   return true;
-  
 }
+
 
 
 Announcement? getAnnouncement(className, assignment) {

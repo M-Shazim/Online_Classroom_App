@@ -60,7 +60,7 @@ class _EditAnnouncementState extends State<EditAnnouncement> {
     file = File(path);
 
     final fileName = basename(file.path);
-    final destination = user+"/"+className+'/$fileName';
+    final destination = user + "/" + className + '/$fileName';
 
     UploadTask? task = uploadFile(destination, file);
 
@@ -71,12 +71,14 @@ class _EditAnnouncementState extends State<EditAnnouncement> {
 
     print('Download-Link: $urlDownload');
 
-    String safeURL = urlDownload.replaceAll(new RegExp(r'[^\w\s]+'),'');
-    await AttachmentsDB().createAttachmentsDB(fileName, urlDownload, safeURL, lookupMimeType(fileName) as String);
+    String safeURL = urlDownload.replaceAll(new RegExp(r'[^\w\s]+'), '');
+    await AttachmentsDB().createAttachmentsDB(
+        fileName, urlDownload, safeURL, lookupMimeType(fileName) as String);
 
-    setState(() => attachments.add(Attachment(name: fileName, url: urlDownload,
-        type: lookupMimeType(fileName) as String
-    )));
+    setState(() => attachments.add(Attachment(
+        name: fileName,
+        url: urlDownload,
+        type: lookupMimeType(fileName) as String)));
   }
 
   // build func
@@ -85,18 +87,18 @@ class _EditAnnouncementState extends State<EditAnnouncement> {
     final user = Provider.of<CustomUser?>(context);
     var account = getAccount(user!.uid);
 
-    if(firstTime) {
+    if (firstTime) {
       title = widget.announcement.title;
       description = widget.announcement.description;
       dueDate = widget.announcement.dueDate;
       attachments = widget.announcement.attachments;
       firstTime = false;
     }
-    DateTime defaultDate = new DateFormat('h:mm a EEE, MMM d, yyyy').parse(
-        widget.announcement.dueDate);
+    DateTime defaultDate = new DateFormat('h:mm a EEE, MMM d, yyyy')
+        .parse(widget.announcement.dueDate);
 
     return Scaffold(
-      // appbar part
+        // appbar part
         appBar: AppBar(
           backgroundColor: widget.announcement.classroom.uiColor,
           elevation: 0.5,
@@ -122,139 +124,196 @@ class _EditAnnouncementState extends State<EditAnnouncement> {
           padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
           children: [
             Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  SizedBox(height: 20.0),
+                key: _formKey,
+                child: Column(
+                  children: [
+                    SizedBox(height: 20.0),
 
-                  TextFormField(
-                    readOnly: true,
-                    initialValue: title,
-                    decoration: InputDecoration(labelText: "Title", border: OutlineInputBorder()),
-                    validator: (val) => val!.isEmpty ? 'Enter a title' : null,
-                    onChanged: (val) {
-                      setState(() {
-                        title = val;
-                      });
-                    },
-                  ),
-
-                  if(widget.announcement.type == 'Assignment') SizedBox(height: 20.0),
-
-                  if(widget.announcement.type == 'Assignment') DateTimeField(
-                    decoration: InputDecoration(labelText: "Due Date", border: OutlineInputBorder()),
-                    format: DateFormat('h:mm a EEE, MMM d, yyyy'),
-                    initialValue: defaultDate,
-                    onShowPicker: (context, currentValue) async {
-                      final date = await showDatePicker(
-                          context: context,
-                          firstDate: DateTime(1900),
-                          initialDate: DateTime.now(),
-                          lastDate: DateTime(2100));
-                      if (date != null) {
-                        final time = await showTimePicker(
-                          context: context,
-                          initialTime:
-                          TimeOfDay.fromDateTime(currentValue ?? DateTime.now()),
-                        );
-                        return DateTimeField.combine(date, time);
-                      } else {
-                        return currentValue;
-                      }
-                    },
-                    onChanged: (date) => dueDate = formatDate(date),
-                  ),
-
-                  SizedBox(height: 20.0),
-
-                  TextFormField(
-                    initialValue: description,
-                    decoration: InputDecoration(labelText: "Description", border: OutlineInputBorder()),
-                    maxLines: 5,
-                    onChanged: (val) {
-                      setState(() {
-                        description = val;
-                      });
-                    },
-                  ),
-
-                  SizedBox(height: 10.0),
-                  Container(
-                      alignment: Alignment.centerLeft,
-                      padding: EdgeInsets.only(top: 15, bottom: 10),
-                      child: Text(
-                        "Attachments:",
-                        style: TextStyle(
-                            fontSize: 15, color: Colors.black, letterSpacing: 1, fontWeight: FontWeight.bold),
-                      )
-                  ),
-                  if(attachments.length > 0) AttachmentEditorComposer(attachmentList: attachments, title: widget.announcement.title),
-
-
-                  OutlinedButton(
-                      onPressed: () {
-                        addFile(account!.email as String, widget.announcement.classroom.className);
-                        setState(() => {});
+                    TextFormField(
+                      readOnly: true,
+                      initialValue: title,
+                      decoration: InputDecoration(
+                          labelText: "Title", border: OutlineInputBorder()),
+                      validator: (val) => val!.isEmpty ? 'Enter a title' : null,
+                      onChanged: (val) {
+                        setState(() {
+                          title = val;
+                        });
                       },
-                      child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 0),
-                          child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("Add Attachment",
-                                    style: TextStyle(color: Colors.black87, fontSize: 14)),
-                                Icon(
-                                  Icons.add_circle_outline_outlined,
-                                  color: widget.announcement.classroom.uiColor,
-                                  size: 32,
-                                )
-                              ]
-                          )
-                      )
-                  ),
-
-                  SizedBox(height: 20.0),
-
-                  // Login  button
-                  ElevatedButton(
-                    child: Text("Update",
-                        style: TextStyle(
-                        color: Colors.white, fontFamily: "Roboto",
-                            fontSize: 22)
                     ),
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        await AnnouncementDB(user: user).updateAnnouncements(title, description, widget.announcement.classroom.className, dateTime, dueDate);
 
-                        for(int i=0; i<attachments.length; i++) {
-                          String safeURL = attachments[i].url.replaceAll(new RegExp(r'[^\w\s]+'),'');
+                    if (widget.announcement.type == 'Assignment')
+                      SizedBox(height: 20.0),
 
-                          await AttachmentsDB().createAttachAnnounceDB(title, attachments[i].url, safeURL);
-                        }
+                    if (widget.announcement.type == 'Assignment')
+                      DateTimeField(
+                        decoration: InputDecoration(
+                            labelText: "Due Date",
+                            border: OutlineInputBorder()),
+                        format: DateFormat('h:mm a EEE, MMM d, yyyy'),
+                        initialValue: defaultDate,
+                        onShowPicker: (context, currentValue) async {
+                          final date = await showDatePicker(
+                              context: context,
+                              firstDate: DateTime(1900),
+                              initialDate: DateTime.now(),
+                              lastDate: DateTime(2100));
+                          if (date != null) {
+                            final time = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.fromDateTime(
+                                  currentValue ?? DateTime.now()),
+                            );
+                            return DateTimeField.combine(date, time);
+                          } else {
+                            return currentValue;
+                          }
+                        },
+                        onChanged: (date) => dueDate = formatDate(date),
+                      ),
 
-                        if(widget.announcement.type == 'Assignment') {
-                          for (int index = 0; index <
-                              submissionList.length; index++) {
-                            if (submissionList[index].assignment ==
-                                    widget.announcement) {
-                              await SubmissionDB().updateSubmissions(
-                                  widget.announcement.classroom.students[index].uid,
-                                  widget.announcement.classroom.className,
-                                  widget.announcement.classroom.className+"__"+title, false);
+                    SizedBox(height: 20.0),
+
+                    TextFormField(
+                      initialValue: description,
+                      decoration: InputDecoration(
+                          labelText: "Description",
+                          border: OutlineInputBorder()),
+                      maxLines: 5,
+                      onChanged: (val) {
+                        setState(() {
+                          description = val;
+                        });
+                      },
+                    ),
+
+                    SizedBox(height: 10.0),
+                    Container(
+                        alignment: Alignment.centerLeft,
+                        padding: EdgeInsets.only(top: 15, bottom: 10),
+                        child: Text(
+                          "Attachments:",
+                          style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.black,
+                              letterSpacing: 1,
+                              fontWeight: FontWeight.bold),
+                        )),
+                    if (attachments.length > 0)
+                      AttachmentEditorComposer(
+                          attachmentList: attachments,
+                          title: widget.announcement.title),
+
+                    OutlinedButton(
+                        onPressed: () {
+                          addFile(account!.email as String,
+                              widget.announcement.classroom.className);
+                          setState(() => {});
+                        },
+                        child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 0),
+                            child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("Add Attachment",
+                                      style: TextStyle(
+                                          color: Colors.black87, fontSize: 14)),
+                                  Icon(
+                                    Icons.add_circle_outline_outlined,
+                                    color:
+                                        widget.announcement.classroom.uiColor,
+                                    size: 32,
+                                  )
+                                ]))),
+
+                    SizedBox(height: 20.0),
+
+                    // Login  button
+                    ElevatedButton(
+                      child: Text("Update",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: "Roboto",
+                              fontSize: 22)),
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          // Show loading spinner
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) =>
+                                Center(child: CircularProgressIndicator()),
+                          );
+
+                          try {
+                            await AnnouncementDB(user: user)
+                                .updateAnnouncements(
+                              title,
+                              description,
+                              widget.announcement.classroom.className,
+                              dateTime,
+                              dueDate,
+                            );
+
+                            for (int i = 0; i < attachments.length; i++) {
+                              String safeURL = attachments[i]
+                                  .url
+                                  .replaceAll(RegExp(r'[^\w\s]+'), '');
+                              await AttachmentsDB().createAttachAnnounceDB(
+                                title,
+                                attachments[i].url,
+                                safeURL,
+                              );
                             }
+
+                            if (widget.announcement.type == 'Assignment') {
+                              for (int index = 0;
+                                  index < submissionList.length;
+                                  index++) {
+                                if (submissionList[index].assignment ==
+                                    widget.announcement) {
+                                  await SubmissionDB().updateSubmissions(
+                                    widget.announcement.classroom
+                                        .students[index].uid,
+                                    widget.announcement.classroom.className,
+                                    widget.announcement.classroom.className +
+                                        "__" +
+                                        title,
+                                    false,
+                                  );
+                                }
+                              }
+                            }
+
+                            await updateAllData();
+                            Navigator.of(context, rootNavigator: true)
+                                .pop(); // close loader
+                            Navigator.of(context)
+                                .pop(); // go back after success
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Announcement Updated.')),
+                            );
+                          } catch (e) {
+                            Navigator.of(context, rootNavigator: true)
+                                .pop(); // close loader
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content:
+                                      Text('Update failed: ${e.toString()}')),
+                            );
                           }
                         }
-                        await updateAllData();
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: widget.announcement.classroom.uiColor,
-                      minimumSize: Size(150, 50),
-                    ),
-                  )
-                ],
-              ))],
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: widget.announcement.classroom.uiColor,
+                        minimumSize: Size(150, 50),
+                      ),
+                    )
+                  ],
+                ))
+          ],
         ));
   }
 }

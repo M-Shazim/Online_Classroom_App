@@ -20,10 +20,15 @@ class _ClassWorkState extends State<ClassWork> {
         itemCount: _classWorkList.length,
         itemBuilder: (context, int index) {
           return InkWell(
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => AnnouncementPage(
-                announcement: _classWorkList[index]
-              ))),
+              onTap: () {
+                Navigator.of(context)
+                    .push(MaterialPageRoute(
+                  builder: (_) => AnnouncementPage(
+                    announcement: _classWorkList[index],
+                  ),
+                ))
+                    .then((_) => setState(() {})); // <--- This line is the key!
+              },
             child:  Padding(
                 padding: const EdgeInsets.all(15.0),
                 child: Container(

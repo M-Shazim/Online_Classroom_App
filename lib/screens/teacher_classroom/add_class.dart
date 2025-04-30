@@ -5,7 +5,6 @@ import 'package:online_classroom/services/updatealldata.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_material_color_picker/flutter_material_color_picker.dart';
 
-
 class AddClass extends StatefulWidget {
   const AddClass({Key? key}) : super(key: key);
 
@@ -164,7 +163,7 @@ class _AddClassState extends State<AddClass> {
                               ),
                             ),
                             validator: (val) =>
-                            val!.isEmpty ? 'Enter a class name' : null,
+                                val!.isEmpty ? 'Enter a class name' : null,
                             onChanged: (val) {
                               setState(() => className = val);
                             },
@@ -227,29 +226,58 @@ class _AddClassState extends State<AddClass> {
                             onPressed: () async {
                               if (_formKey.currentState!.validate()) {
                                 if (user != null) {
-                                  // Add class to the database
-                                  await ClassesDB(user: user).updateClasses(
-                                    className,
-                                    description,
-                                    uiColor,
+                                  // Show loading spinner
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible:
+                                        false, // Prevent user from dismissing
+                                    builder: (_) => Center(
+                                        child: CircularProgressIndicator()),
                                   );
 
-                                  // Call updateAllData if necessary
-                                  await updateAllData();
+                                  try {
+                                    // Add class to the database
+                                    await ClassesDB(user: user).updateClasses(
+                                      className,
+                                      description,
+                                      uiColor,
+                                    );
 
-                                  // Refresh the class list by fetching the updated classes
-                                  // List classes = await ClassesDB(user: user).getClasses();
-                                  List? classes = await ClassesDB().createClassesDataList();
+                                    // Call updateAllData if necessary
+                                    await updateAllData();
 
+                                    // Refresh the class list by fetching the updated classes
+                                    List? classes = await ClassesDB()
+                                        .createClassesDataList();
 
-                                  // Update the UI
-                                  setState(() {
-                                    // Here, you can update your local class list variable (e.g., `classes`) to reflect the new data
-                                    // This might be necessary if you're using a state management solution
-                                  });
+                                    // Update the UI (if needed)
+                                    setState(() {
+                                      // Update your local class list if you're using state management
+                                    });
 
-                                  // Go back to previous screen
-                                  Navigator.of(context).pop();
+                                    // Close the loading spinner
+                                    Navigator.of(context, rootNavigator: true)
+                                        .pop();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              'New Class Created. Popping up in a minute.')),
+                                    );
+
+                                    // Go back to the previous screen
+                                    Navigator.of(context).pop();
+                                  } catch (e) {
+                                    // Close the loading spinner in case of error
+                                    Navigator.of(context, rootNavigator: true)
+                                        .pop();
+
+                                    // Show an error message
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              'Failed to create class: ${e.toString()}')),
+                                    );
+                                  }
                                 }
                               }
                             },
@@ -283,8 +311,6 @@ class _AddClassState extends State<AddClass> {
     );
   }
 }
-
-
 
 // import 'package:flutter/material.dart';
 // import 'package:flutter_material_color_picker/flutter_material_color_picker.dart';

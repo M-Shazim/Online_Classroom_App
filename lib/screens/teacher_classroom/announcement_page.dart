@@ -68,9 +68,11 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     },
   );
 
+
   Future<void> deleteAnnouncement() async {
     final user = Provider.of<CustomUser?>(context, listen: false);
-    return showDialog<void>(
+
+    final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) => AlertDialog(
@@ -79,36 +81,100 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
         actions: <Widget>[
           TextButton(
             child: Text('Delete', style: TextStyle(color: Colors.red)),
-            onPressed: () async {
-              await AnnouncementDB(user: user).deleteAnnouncements(
-                  widget.announcement.title, widget.announcement.classroom.className);
-              for (var attachment in widget.announcement.attachments) {
-                String safeURL = attachment.url.replaceAll(RegExp(r'[^\w\s]+'), '');
-                await AttachmentsDB().deleteAttachmentsDB(attachment.name, safeURL);
-                await AttachmentsDB().deleteAttachAnnounceDB(
-                    widget.announcement.title, safeURL);
-              }
-              if (widget.announcement.type == 'Assignment') {
-                for (var student in widget.announcement.classroom.students) {
-                  await SubmissionDB(user: user).deleteSubmissions(
-                    student.uid,
-                    widget.announcement.classroom.className,
-                    "${widget.announcement.classroom.className}__${widget.announcement.title}",
-                  );
-                }
-              }
-              await updateAllData();
-              Navigator.of(context)..pop()..pop();
-            },
+            onPressed: () => Navigator.of(context).pop(true),
           ),
           TextButton(
             child: Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).pop(false),
           ),
         ],
       ),
     );
+
+    if (confirmed != true) return;
+
+    // Now show loading after confirmation
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await AnnouncementDB(user: user).deleteAnnouncements(
+          widget.announcement.title, widget.announcement.classroom.className);
+
+      for (var attachment in widget.announcement.attachments) {
+        String safeURL = attachment.url.replaceAll(RegExp(r'[^\w\s]+'), '');
+        await AttachmentsDB().deleteAttachmentsDB(attachment.name, safeURL);
+        await AttachmentsDB().deleteAttachAnnounceDB(
+            widget.announcement.title, safeURL);
+      }
+
+      if (widget.announcement.type == 'Assignment') {
+        for (var student in widget.announcement.classroom.students) {
+          await SubmissionDB(user: user).deleteSubmissions(
+            student.uid,
+            widget.announcement.classroom.className,
+            "${widget.announcement.classroom.className}__${widget.announcement.title}",
+          );
+        }
+      }
+
+      await updateAllData();
+
+      Navigator.of(context, rootNavigator: true).pop(); // Close loading
+      Navigator.of(context).pop(); // Pop the announcement page
+    } catch (e) {
+      Navigator.of(context, rootNavigator: true).pop(); // Close loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error deleting: ${e.toString()}")),
+      );
+    }
   }
+
+
+  // Future<void> deleteAnnouncement() async {
+  //   final user = Provider.of<CustomUser?>(context, listen: false);
+  //   return showDialog<void>(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (BuildContext context) => AlertDialog(
+  //       title: Text('Delete ${widget.announcement.type}'),
+  //       content: Text('This cannot be undone. Continue?'),
+  //       actions: <Widget>[
+  //         TextButton(
+  //           child: Text('Delete', style: TextStyle(color: Colors.red)),
+  //           onPressed: () async {
+  //             await AnnouncementDB(user: user).deleteAnnouncements(
+  //                 widget.announcement.title, widget.announcement.classroom.className);
+  //             for (var attachment in widget.announcement.attachments) {
+  //               String safeURL = attachment.url.replaceAll(RegExp(r'[^\w\s]+'), '');
+  //               await AttachmentsDB().deleteAttachmentsDB(attachment.name, safeURL);
+  //               await AttachmentsDB().deleteAttachAnnounceDB(
+  //                   widget.announcement.title, safeURL);
+  //             }
+  //             if (widget.announcement.type == 'Assignment') {
+  //               for (var student in widget.announcement.classroom.students) {
+  //                 await SubmissionDB(user: user).deleteSubmissions(
+  //                   student.uid,
+  //                   widget.announcement.classroom.className,
+  //                   "${widget.announcement.classroom.className}__${widget.announcement.title}",
+  //                 );
+  //               }
+  //             }
+  //             await updateAllData();
+  //             Navigator.of(context)..pop()..pop();
+  //           },
+  //         ),
+  //         TextButton(
+  //           child: Text('Cancel'),
+  //           onPressed: () => Navigator.of(context).pop(),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -203,6 +269,25 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
           SizedBox(height: 10),
           FloatingActionButton(
             onPressed: deleteAnnouncement,
+            // async {
+            //   showDialog(
+            //     context: context,
+            //     barrierDismissible: false,
+            //     builder: (_) => Center(child: CircularProgressIndicator()),
+            //   );
+            //
+            //   try {
+            //     await deleteAnnouncement();
+            //     Navigator.of(context, rootNavigator: true).pop(); // hide loading
+            //     Navigator.of(context).pop(); // go back after delete
+            //   } catch (e) {
+            //     Navigator.of(context, rootNavigator: true).pop(); // hide loading
+            //     ScaffoldMessenger.of(context).showSnackBar(
+            //       SnackBar(content: Text('Delete failed: ${e.toString()}')),
+            //     );
+            //   }
+            // },
+
             backgroundColor: widget.announcement.classroom.uiColor,
             child: Icon(Icons.delete, color: Colors.white),
             heroTag: null,

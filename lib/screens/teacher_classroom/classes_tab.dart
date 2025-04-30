@@ -15,18 +15,55 @@ class ClassesTab extends StatefulWidget {
 class _ClassesTabState extends State<ClassesTab> {
 
   @override
+  void initState() {
+    super.initState();
+    refreshClasses();
+  }
+
+
+  Future<void> refreshClasses() async {
+    await getListClasses(); // this updates the global classRoomList
+    setState(() {
+      // This will rerun the build method and re-evaluate this line:
+      // List _classRoomList = classRoomList.where((...)).toList();
+    });
+  }
+
+
+
+
+  @override
   Widget build(BuildContext context) {
-    List _classRoomList = classRoomList.where((i) => i.creator == widget.classTeacher).toList();
+    List _classRoomList =
+        classRoomList.where((i) => i.creator == widget.classTeacher).toList();
 
     return ListView.builder(
         itemCount: _classRoomList.length,
         itemBuilder: (context, int index) {
           return GestureDetector(
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => ClassRoomPage(
-                  uiColor: _classRoomList[index].uiColor,
-                  classRoom: _classRoomList[index],
-                ))),
+            onTap: () => Navigator.of(context)
+                .push(MaterialPageRoute(
+              builder: (_) => ClassRoomPage(
+                uiColor: _classRoomList[index].uiColor,
+                classRoom: _classRoomList[index],
+                onClassDeleted: () {
+                  setState(() {
+                    // After the class is deleted, refresh the list (or remove the deleted class from the list)
+                    // _classRoomList.removeAt(index);  // Or refetch the list from the database
+                  });
+                },
+              ),
+            ))
+                .then((value) {
+              if (value == true) {
+                // Update UI, refresh the list of classes
+                setState(() {
+                  // Refresh the class list
+                  _classRoomList.removeAt(index); // or however you update the class list
+                  refreshClasses();
+                });
+              }
+            }),
             child: Stack(
               children: [
                 Container(
@@ -57,19 +94,17 @@ class _ClassesTabState extends State<ClassesTab> {
                   child: Text(
                     _classRoomList[index].description,
                     style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white,
-                        letterSpacing: 1),
+                        fontSize: 14, color: Colors.white, letterSpacing: 1),
                   ),
                 ),
                 Container(
                   margin: EdgeInsets.only(top: 80, left: 30),
                   child: Text(
-                    _classRoomList[index].creator.firstName! + " " + _classRoomList[index].creator.lastName!,
+                    _classRoomList[index].creator.firstName! +
+                        " " +
+                        _classRoomList[index].creator.lastName!,
                     style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white54,
-                        letterSpacing: 1),
+                        fontSize: 12, color: Colors.white54, letterSpacing: 1),
                   ),
                 )
               ],

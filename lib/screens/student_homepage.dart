@@ -60,9 +60,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Online Classroom',
+                      'Virtual Classroom',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.blue.shade900,
                       ),

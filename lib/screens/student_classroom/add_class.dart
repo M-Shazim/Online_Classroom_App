@@ -121,23 +121,61 @@ class _AddClassState extends State<AddClass> {
                             onPressed: () async {
                               if (_formKey.currentState!.validate()) {
                                 if (user != null) {
-                                  await ClassesDB(user: user)
-                                      .updateStudentClasses(className);
+                                  // Show loading dialog
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (_) => Center(child: CircularProgressIndicator()),
+                                  );
 
-                                  for (var announcement in announcementList) {
-                                    if (announcement.classroom.className ==
-                                        className &&
-                                        announcement.type == "Assignment") {
-                                      await SubmissionDB().addSubmissions(
-                                        user.uid!,
-                                        className,
-                                        announcement.title,
+                                  try {
+                                    bool classExists = await ClassesDB()
+                                        .doesClassExist(className);
+
+                                    if (classExists) {
+                                      await ClassesDB(user: user)
+                                          .updateStudentClasses(className);
+
+                                      for (var announcement in announcementList) {
+                                        if (announcement.classroom.className ==
+                                            className &&
+                                            announcement.type == "Assignment") {
+                                          await SubmissionDB().addSubmissions(
+                                            user.uid!,
+                                            className,
+                                            announcement.title,
+                                          );
+                                        }
+                                      }
+
+                                      await updateAllData();
+                                      Navigator.of(context)
+                                          .pop(); // Close the current screen
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text('Class Joined.')),
+
+
+                                      );
+
+                                      Navigator.of(context, rootNavigator: true).pop(); // Dismiss loading dialog
+
+                                    } else {
+                                      Navigator.of(context)
+                                          .pop(); // Close loading
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text('Class not found!')),
                                       );
                                     }
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error: ${e.toString()}')),
+                                    );
                                   }
 
-                                  await updateAllData();
-                                  Navigator.of(context).pop();
                                 }
                               }
                             },
